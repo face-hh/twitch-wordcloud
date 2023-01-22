@@ -33,7 +33,7 @@ Pull requests are appreciated!
 
 # Errors
 
-Errors might occur, if so, **open an issue here** or join our [Discord server](https://discord.gg/W98yWga6YK) for faster help.
+Errors might occur, if so, [**open an issue here**](https://github.com/face-hh/twitch-wordcloud/issues/new) or join our [Discord server](https://discord.gg/W98yWga6YK) for faster help.
 ## Credits
 
 - [word_cloud](https://github.com/amueller/word_cloud)
