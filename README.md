@@ -3,6 +3,8 @@ A project that turns twitch streamers' chats into a wordcloud (image).
 
 Dev log at: https://youtu.be/yqUUsAxZG50
 
+![image](https://user-images.githubusercontent.com/69168154/214057700-b4fcbcac-4686-4619-b059-0d6ea8073c34.png)
+
 # ❓ How to use
 ## Fetching streamers chats
 > 1. Modify `twitch.js` to add/remove streamers, instructions are in comments (`//`)
