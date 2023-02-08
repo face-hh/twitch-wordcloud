@@ -1,4 +1,4 @@
-const { writeFileSync, appendFileSync } = require('fs');
+const { appendFileSync } = require('fs');
 const tmi = require('tmi.js');
 const chalk = require('chalk');
 const blessed = require('blessed');
