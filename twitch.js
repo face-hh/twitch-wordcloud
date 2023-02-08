@@ -1,13 +1,14 @@
-const { writeFileSync } = require('fs');
+const { writeFileSync, appendFileSync } = require('fs');
 const tmi = require('tmi.js');
-const readline = require('readline');
-//const chalk = require('chalk');
+const chalk = require('chalk');
+const blessed = require('blessed');
+const screen = blessed.screen();
 
 // STREAMERS, ADD/REMOVE AS YOU WISH
 
 const opts = {
 	channels: [
-		'ninja',
+    'ninja',
 		'auronplay',
 		'rubius',
 		'ibai',
@@ -42,26 +43,107 @@ client.on('connected', onConnectedHandler);
 
 client.connect();
 
-const rl = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout,
-});
 
-rl.on('line', (input) => {
-	const messagesPropertyName = input?.split(' ')?.[1];
+const textArea = blessed.box({
+  content: '',
+  tags: true,
+  left: 0,
+  top: 0, 
+  border: {
+    type: 'line',
+  },
+  height: '94%',
+  scrollable: true,
+  alwaysScroll: true,
+  scrollbar: {
+    style: {
+      bg: 'white'
+    }
+  }
+
+})
+const box = blessed.box({
+  content: '',
+  left: 0,
+  bottom: 0,
+  width: '100%',
+  height: '10%',
+  border: {
+    type: 'line'
+  },
+  style: {
+    border: {
+      fg: 'grey'
+    },
+    hover: {
+      bg: 'grey'
+    }
+  }
+});
+screen.append(box);
+screen.append(textArea)
+screen.render();
+let autoScroll = true;
+textArea.focus();
+let input = '';
+screen.on('keypress', (ch, key) => {
+  if (key.name === 'up' || key.name === 'down' || key.name === 'left' || key.name === 'right') return;
+  box.focus()
+  if (key.name === 'backspace') {
+    input = input.slice(0, -1);
+  }
+  if (key.name === 'enter') {
+    const messagesPropertyName = input?.split(' ')?.[1];
 	const messages2 = messages?.[messagesPropertyName];
 
 	if(!messages2) return;
 
 	if (input.startsWith(':q ')) close(messagesPropertyName);
 
-	if (input.startsWith(':c ')) console.log('The streamer has: ' + messages2.split('\n').length)
+	if (input.startsWith(':c ')) write(chalk.cyan('The streamer has: ' + messages2.split('\n').length + ' messages in the chat'));
+    input = '';
+	screen.render();
+  } else {
+    input += ch;
+  }
+  box.setContent(input);
+  screen.render();
+
 });
 
-function close(messagesPropertyName) {
-	writeFileSync(`${messagesPropertyName}.txt`, messages[messagesPropertyName]);
-	client.part(messagesPropertyName);
+screen.key(['up'], function(ch, key) {
+  textArea.scroll(-1);
+  autoScroll = false;
+  screen.render();
+});
+
+screen.key(['down'], function(ch, key) {
+  textArea.scroll(1);
+  if (textArea.getScrollPerc() === 100) {
+    autoScroll = true;
+  }
+  screen.render();
+  
+});
+screen.key(['escape', 'C-c'], function(ch, key) {
+for (const streamer of opts.channels) {
+	close(streamer.slice(1));
 }
+  return process.exit(0);
+});
+
+function write(content) {
+  textArea.setContent(textArea.content + '\n' + content);
+  if (autoScroll) textArea.scroll(1, false);
+  screen.render();
+}
+
+
+
+function close(messagesPropertyName) {
+	if (!messages[messagesPropertyName]) return;
+  appendFileSync(`${messagesPropertyName}.txt`, messages[messagesPropertyName], { encoding: 'utf8' });
+  client.part(messagesPropertyName);}
 
 function onMessageHandler(target, context, msg, self) {
 	if (self) return;
@@ -70,11 +152,9 @@ function onMessageHandler(target, context, msg, self) {
 	if (!messages[target]) messages[target] = '';
 	messages[target] += `${msg}\n`;
 
-	// UNCOMMENT IF YOU WANT REAL-TIME LOGS OF ALL THE MESSAGES, MIGHT MAKE IT HARD TO TYPE :q OR :c
-
-	//console.log(`${chalk.green(`[${new Date().toLocaleString()}] ${target}`)}: ${chalk.white(msg)}`);
+	write(`${chalk.green(`[${new Date().toLocaleString()}] ${context.username} (${target})`)}: ${chalk.white(msg)}`);
 }
 
 function onConnectedHandler(addr, port) {
-	console.log(`* Connected to ${addr}:${port}`);
+	write(`* Connected to ${addr}:${port}`);
 }
