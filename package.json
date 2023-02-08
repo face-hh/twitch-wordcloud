@@ -1,0 +1,12 @@
+{
+  "name": "twitch-wordcloud",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "https://github.com/face-hh/twitch-wordcloud",
+  "license": "MIT",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "chalk": "4",
+    "tmi.js": "^1.8.5"
+  }
+}
