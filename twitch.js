@@ -7,31 +7,31 @@ const screen = blessed.screen();
 // STREAMERS, ADD/REMOVE AS YOU WISH
 
 const opts = {
-	channels: [
+  channels: [
     'ninja',
-		'auronplay',
-		'rubius',
-		'ibai',
-		'tfue',
-		'thegrefg',
-		'shroud',
-		'juansguarnizo',
-		'pokimane',
-		'sodapoppin',
-		'heelmike',
-		'tommyinnit',
-		'adinross',
-		'nickmercs',
-		'hasanabi',
-		'lvndmark',
-		'pestily',
-		'summit1g',
-		'kaicenat',
-		'k3soju',
-		'tarik',
-		'moistcr1tikal',
-		'xqc',
-	],
+    'auronplay',
+    'rubius',
+    'ibai',
+    'tfue',
+    'thegrefg',
+    'shroud',
+    'juansguarnizo',
+    'pokimane',
+    'sodapoppin',
+    'heelmike',
+    'tommyinnit',
+    'adinross',
+    'nickmercs',
+    'hasanabi',
+    'lvndmark',
+    'pestily',
+    'summit1g',
+    'kaicenat',
+    'k3soju',
+    'tarik',
+    'moistcr1tikal',
+    'xqc',
+  ],
 };
 
 const client = new tmi.client(opts);
@@ -48,7 +48,7 @@ const textArea = blessed.box({
   content: '',
   tags: true,
   left: 0,
-  top: 0, 
+  top: 0,
   border: {
     type: 'line',
   },
@@ -86,49 +86,57 @@ screen.render();
 let autoScroll = true;
 textArea.focus();
 let input = '';
-screen.on('keypress', (ch, key) => {
+screen.on('keypress', async (ch, key) => {
   if (key.name === 'up' || key.name === 'down' || key.name === 'left' || key.name === 'right') return;
-  box.focus()
-  if (key.name === 'backspace') {
-    input = input.slice(0, -1);
+  switch (key.name) {
+    case 'backspace':
+      input = input.trim().substring(0, input.trim().length - 1);
+      box.setContent(input.trim());
+      screen.render();
+      break;
+    case 'enter':
+      const messagesPropertyName = input?.split(' ')?.[1];
+      const messages2 = messages?.[messagesPropertyName];
+      if (messages2) {
+        if (input.trim().startsWith(':q ')) await close(messagesPropertyName);
+
+        if (input.trim().startsWith(':c ')) write(chalk.cyan('The streamer has: ' + messages2.split('\n').length + ' messages in the chat'));
+      } else if (!messages2 && input.trim().length > 0) {
+        write(chalk.yellow('Unknown command!'))
+      }
+      input = '';
+      box.setContent(input);
+      screen.render();
+      break;
+    default:
+      input += ch;
+      box.setContent(input.trim());
+      box.render();
+      break;
   }
-  if (key.name === 'enter') {
-    const messagesPropertyName = input?.split(' ')?.[1];
-	const messages2 = messages?.[messagesPropertyName];
-
-	if(!messages2) return;
-
-	if (input.startsWith(':q ')) close(messagesPropertyName);
-
-	if (input.startsWith(':c ')) write(chalk.cyan('The streamer has: ' + messages2.split('\n').length + ' messages in the chat'));
-    input = '';
-	screen.render();
-  } else {
-    input += ch;
-  }
-  box.setContent(input);
+  box.setContent(input.trim());
   screen.render();
 
 });
 
-screen.key(['up'], function(ch, key) {
+screen.key(['up'], function (ch, key) {
   textArea.scroll(-1);
   autoScroll = false;
   screen.render();
 });
 
-screen.key(['down'], function(ch, key) {
+screen.key(['down'], function (ch, key) {
   textArea.scroll(1);
   if (textArea.getScrollPerc() === 100) {
     autoScroll = true;
   }
   screen.render();
-  
+
 });
-screen.key(['escape', 'C-c'], function(ch, key) {
-for (const streamer of opts.channels) {
-	close(streamer.slice(1));
-}
+screen.key(['escape', 'C-c'], async (ch, key) => {
+  for (const streamer of opts.channels) {
+    await close(streamer.slice(1));
+  }
   return process.exit(0);
 });
 
@@ -140,21 +148,29 @@ function write(content) {
 
 
 
-function close(messagesPropertyName) {
-	if (!messages[messagesPropertyName]) return;
+async function close(messagesPropertyName) {
+  if (!messages[messagesPropertyName]) return;
   appendFileSync(`${messagesPropertyName}.txt`, messages[messagesPropertyName], { encoding: 'utf8' });
-  client.part(messagesPropertyName);}
+  try {
+    await client.part(messagesPropertyName);
+    write(chalk.yellow(`Loaded collected messages to ${messagesPropertyName}.txt!`));
+    box.setContent(input);
+    screen.render();
+  } catch {
+    write(chalk.red(`${messagesPropertyName} Channel has already been disconnected!`));
+  }
+}
 
 function onMessageHandler(target, context, msg, self) {
-	if (self) return;
-	target = target.replace(/#/g, '');
+  if (self) return;
+  target = target.replace(/#/g, '');
 
-	if (!messages[target]) messages[target] = '';
-	messages[target] += `${msg}\n`;
+  if (!messages[target]) messages[target] = '';
+  messages[target] += `${msg}\n`;
 
-	write(`${chalk.green(`[${new Date().toLocaleString()}] ${context.username} (${target})`)}: ${chalk.white(msg)}`);
+  write(`${chalk.green(`[${new Date().toLocaleString()}] ${context.username} (${target})`)}: ${chalk.white(msg)}`);
 }
 
 function onConnectedHandler(addr, port) {
-	write(`* Connected to ${addr}:${port}`);
+  write(`* Connected to ${addr}:${port}`);
 }
