@@ -40,6 +40,3 @@ Errors might occur, if so, [**open an issue here**](https://github.com/face-hh/t
 
 - [word_cloud](https://github.com/amueller/word_cloud)
 - [remove.bg](https://remove.bg)
-
-## License
-Free to use, as long as you credit me :)
